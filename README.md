@@ -1,4 +1,4 @@
-
+<h1>Food Manager Application API</h1>
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
