@@ -2,55 +2,61 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { FOODS } from './foods.mock';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { Ifood } from './interfaces/car.interface';
+import { Ifood } from './interfaces/food.interface';
 import { FoodDto } from './food.dto';
 
 @Injectable()//FoodService
 export class FoodService {
-   private foods = FOODS;
-   public async getFoods() {
-      return this.foods;
-   } 
+   constructor(@InjectModel('Food') private readonly foodModel: Model<Ifood>) {
 
-   public postFood(food) {
-      return this.foods.push(food);
    }
 
-   public getFoodById(id: number): Promise<any> {
-      const foodId = Number(id);
-      return new Promise((resolve) => {
-         const index = this.foods.findIndex((food) => food.id == foodId);
-         if (!index) {
-            throw new HttpException("food not found", 404);
-         }
-
-         return resolve(this.foods[index]);
+   public async getFoods(): Promise<FoodDto[]> {
+      const foods = await this.foodModel.find().exec();
+      if (!foods || !foods[0]) {
+         throw new HttpException("not found", 404);
       }
-      );
-
+      return foods;
    }
 
-   public deleteFoodById(id: number): Promise<any> {
-      const foodId = Number(id);
-      return new Promise((resolve) => {
-         const index = this.foods.findIndex((food) => food.id == foodId);
-         if (index === -1) {
-            throw new HttpException("Not Found", 404);
-         }
-         this.foods.splice(index, 1);
-         return resolve(this.foods[index]);
-      });
+   public async postFood(NewFood: FoodDto) {
+      const food = await this.foodModel.findOne({ NewFood }).exec();
+      return food.save();
    }
 
-   public putFoodById(id: number, propertyName: string, propertyValue: string): Promise<any> {
-      const foodId = Number(id);
-      return new Promise((resolve) => {
-         const index = this.foods.findIndex((food) => food.id == foodId);
-         if (index === -1) {
-            throw new HttpException("Not Found", 404);
-         }
-         this.foods[index][propertyName] = propertyValue;
-         return resolve(this.foods[index]);
-      });
+   public async getFoodById(id: number): Promise<FoodDto> {
+      const foods = await this.foodModel.findOne({ id }).exec();
+      if (!foods) {
+         throw new HttpException("not found", 404);
+      }
+      return foods;
+   }
+
+   public async deleteFoodById(id: number): Promise<FoodDto> {
+      const foodToDelete = await this.foodModel.findOne({ id }).exec();
+
+      if (!foodToDelete) {
+         throw new HttpException("not found", 404);
+      }
+
+      const deletionResult = await this.foodModel.deleteOne({ id }).exec();
+
+      if (deletionResult.deletedCount === 0) {
+         throw new HttpException("Deletion failed", 500);
+      }
+
+      return foodToDelete;
+   }
+
+   public async putFoodById(id: number, propertyName: string, propertyValue: string): Promise<FoodDto> {
+      const foods = await this.foodModel.findOneAndUpdate({ id },
+         {
+            [propertyName]: propertyValue,
+         },
+      ).exec();
+      if (!foods) {
+         throw new HttpException("not found", 404);
+      }
+      return foods;
    }
 }

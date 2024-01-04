@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 
 import { FoodModule } from './food/food.module';
 
-import{MongooseModule} from '@nestjs/mongoose';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
